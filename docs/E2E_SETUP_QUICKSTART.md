@@ -7,6 +7,17 @@ This guide provides a quick reference for running end-to-end (e2e) tests in Miss
 - Docker and Docker Compose
 - Node.js 22.15.0 or later
 - pnpm (managed via corepack)
+- For Linux or CI runners, ensure Cypress system dependencies match the dev container setup:
+  - `libgtk2.0-0`
+  - `libgtk-3-0`
+  - `libgbm-dev`
+  - `libnotify-dev`
+  - `libnss3`
+  - `libxss1`
+  - `libasound2t64` (or `libasound2` on older Ubuntu releases)
+  - `libxtst6`
+  - `xauth`
+  - `xvfb`
 
 ## First-Time Setup
 

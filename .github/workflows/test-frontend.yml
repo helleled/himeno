@@ -42,7 +42,9 @@ jobs:
     - name: Check pnpm-lock.yaml
       run: git diff --exit-code pnpm-lock.yaml
     - name: Copy Configure
-      run: cp .github/misskey/test.yml .config
+      run: |
+        mkdir -p .config
+        cp .github/misskey/test.yml .config/test.yml
     - name: Build
       run: pnpm build
     - name: Test
@@ -57,6 +59,9 @@ jobs:
     name: E2E tests (frontend)
     runs-on: ubuntu-latest
 
+    env:
+      CYPRESS_BASE_URL: http://127.0.0.1:61812
+
     strategy:
       fail-fast: false
       matrix:
@@ -68,17 +73,27 @@ jobs:
         ports:
           - 54312:5432
         env:
-          POSTGRES_DB: test-misskey
-          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: misskey_test
+          POSTGRES_USER: misskey_test
+          POSTGRES_PASSWORD: misskey-test-password
       redis:
         image: redis:7
         ports:
           - 56312:6379
+        command: >-
+          redis-server --requirepass misskey-test-redis
 
     steps:
     - uses: actions/checkout@v4.3.0
       with:
         submodules: true
+    - name: Install system libraries for Cypress
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libnss3 libxss1 libxtst6 xauth xvfb
+        if ! sudo apt-get install -y libasound2t64; then
+          sudo apt-get install -y libasound2
+        fi
     # https://github.com/cypress-io/cypress-docker-images/issues/150
     #- name: Install mplayer for FireFox
     #  run: sudo apt install mplayer -y
@@ -94,7 +109,9 @@ jobs:
         cache: 'pnpm'
     - run: pnpm i --frozen-lockfile
     - name: Copy Configure
-      run: cp .github/misskey/test.yml .config
+      run: |
+        mkdir -p .config
+        cp .github/misskey/test.yml .config/test.yml
     - name: Build
       run: pnpm build
     # https://github.com/cypress-io/cypress/issues/4351#issuecomment-559489091
@@ -110,7 +127,7 @@ jobs:
       with:
         install: false
         start: pnpm start:test
-        wait-on: 'http://localhost:61812'
+        wait-on: 'http://127.0.0.1:61812'
         headed: true
         browser: ${{ matrix.browser }}
     - uses: actions/upload-artifact@v4
