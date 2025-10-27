@@ -4,6 +4,8 @@
  */
 
 import { promises as fsp } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { compress } from 'wawoff2';
 import { logger } from './logger.js';
 
@@ -28,8 +30,31 @@ interface HarfbuzzWasm extends WebAssembly.Exports {
 export async function generateSubsettedFont(ttfPath: string, unicodeRangeValues: Map<string, number[]>) {
 	const ttf = await fsp.readFile(ttfPath);
 
-	const result = await WebAssembly.instantiate(await fsp.readFile('./node_modules/harfbuzzjs/hb-subset.wasm'));
-	const harfbuzzWasm = result.exports as HarfbuzzWasm;
+	// Resolve wasm path relative to the package root
+	const currentDir = path.dirname(fileURLToPath(import.meta.url));
+	const wasmPath = path.resolve(currentDir, '../node_modules/harfbuzzjs/hb-subset.wasm');
+    
+	const wasmBuffer = await fsp.readFile(wasmPath);
+	const wasmResult = await WebAssembly.instantiate(wasmBuffer) as unknown as WebAssembly.WebAssemblyInstantiatedSource;
+	const harfbuzzWasm = wasmResult.instance.exports as HarfbuzzWasm;
+
+	// Verify required exports exist (runtime safety check)
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+	if (!harfbuzzWasm.memory) {
+		throw new Error('HarfBuzz WASM module missing required export: memory');
+	}
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+	if (!harfbuzzWasm.hb_subset_input_create_or_fail) {
+		throw new Error('HarfBuzz WASM module missing required export: hb_subset_input_create_or_fail');
+	}
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+	if (!harfbuzzWasm.malloc || !harfbuzzWasm.free) {
+		throw new Error('HarfBuzz WASM module missing required exports: malloc/free');
+	}
+	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+	if (!harfbuzzWasm.hb_subset_or_fail) {
+		throw new Error('HarfBuzz WASM module missing required export: hb_subset_or_fail');
+	}
 
 	const heapu8 = new Uint8Array(harfbuzzWasm.memory.buffer);
 
