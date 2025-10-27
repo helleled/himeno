@@ -42,7 +42,7 @@
       "resolves": [
         {
           "id": 1105444,
-          "path": "packages__backend>@swc/cli>minimatch>brace-expansion",
+          "path": ".>@misskey-dev/eslint-plugin>@stylistic/eslint-plugin>@typescript-eslint/utils>@typescript-eslint/typescript-estree>minimatch>brace-expansion",
           "dev": false,
           "optional": false,
           "bundled": false
@@ -50,7 +50,7 @@
       ],
       "module": "brace-expansion",
       "target": "2.0.2",
-      "depth": 4
+      "depth": 7
     },
     {
       "action": "review",
@@ -98,7 +98,7 @@
       "resolves": [
         {
           "id": 1105443,
-          "path": "packages__backend>@tensorflow/tfjs-node>@mapbox/node-pre-gyp>rimraf>glob>minimatch>brace-expansion",
+          "path": ".>eslint>minimatch>brace-expansion",
           "dev": false,
           "optional": false,
           "bundled": false
@@ -385,7 +385,7 @@
         {
           "version": "1.1.11",
           "paths": [
-            "packages__backend>@tensorflow/tfjs-node>@mapbox/node-pre-gyp>rimraf>glob>minimatch>brace-expansion"
+            ".>eslint>minimatch>brace-expansion"
           ]
         }
       ],
@@ -424,7 +424,7 @@
         {
           "version": "2.0.1",
           "paths": [
-            "packages__backend>@swc/cli>minimatch>brace-expansion"
+            ".>@misskey-dev/eslint-plugin>@stylistic/eslint-plugin>@typescript-eslint/utils>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
           ]
         }
       ],
@@ -624,9 +624,9 @@
       "high": 3,
       "critical": 0
     },
-    "dependencies": 1447,
+    "dependencies": 2343,
     "devDependencies": 0,
     "optionalDependencies": 0,
-    "totalDependencies": 1447
+    "totalDependencies": 2343
   }
 }
