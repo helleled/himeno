@@ -4465,10 +4465,10 @@ export type components = {
             clippedCount?: number;
             hasPoll?: boolean;
             myReaction?: string | null;
-            isEdited?: boolean;
-            editCount?: number;
+            isEdited: boolean;
+            editCount: number;
             /** Format: date-time */
-            latestEditedAt?: string | null;
+            latestEditedAt: string | null;
         };
         NoteDraft: {
             /**

@@ -1472,8 +1472,78 @@ type EndpointsResponse = operations['endpoints']['responses']['200']['content'][
 
 declare namespace entities {
     export {
+        Error_2 as Error,
+        UserLite,
+        UserDetailedNotMeOnly,
+        MeDetailedOnly,
+        UserDetailedNotMe,
+        MeDetailed,
+        UserDetailed,
+        User,
+        UserList,
+        Achievement,
+        AchievementName,
+        Ad,
+        Announcement,
+        App,
+        NoteDraft,
+        NoteReaction,
+        NoteReactionWithNote,
+        NoteFavorite,
+        Notification_2 as Notification,
+        DriveFile,
+        DriveFolder,
+        Following,
+        Muting,
+        RenoteMuting,
+        Blocking,
+        Hashtag,
+        InviteCode,
+        Page,
+        PageBlock,
+        Channel,
+        QueueCount,
+        QueueMetrics,
+        QueueJob,
+        Antenna,
+        Clip,
+        FederationInstance,
+        GalleryPost,
+        EmojiSimple,
+        EmojiDetailed,
+        EmojiDetailedAdmin,
+        Flash,
+        Signin,
+        RoleCondFormulaLogics,
+        RoleCondFormulaValueNot,
+        RoleCondFormulaValueIsLocalOrRemote,
+        RoleCondFormulaValueUserSettingBooleanSchema,
+        RoleCondFormulaValueAssignedRole,
+        RoleCondFormulaValueCreated,
+        RoleCondFormulaFollowersOrFollowingOrNotes,
+        RoleCondFormulaValue,
+        RoleLite,
+        Role,
+        RolePolicies,
+        ReversiGameLite,
+        ReversiGameDetailed,
+        MetaLite,
+        MetaDetailedOnly,
+        MetaDetailed,
+        UserWebhook,
+        SystemWebhook,
+        AbuseReportNotificationRecipient,
+        ChatMessage,
+        ChatMessageLite,
+        ChatMessageLiteFor1on1,
+        ChatMessageLiteForRoom,
+        ChatRoom,
+        ChatRoomInvitation,
+        ChatRoomMembership,
+        Note as AutogenNote,
         ID,
         DateString,
+        Note_2 as Note,
         PureRenote,
         PageEvent,
         ModerationLog,
@@ -2002,6 +2072,8 @@ declare namespace entities {
         NotesDraftsListResponse,
         NotesDraftsUpdateRequest,
         NotesDraftsUpdateResponse,
+        NotesEditHistoryRequest,
+        NotesEditHistoryResponse,
         NotesFavoritesCreateRequest,
         NotesFavoritesDeleteRequest,
         NotesFeaturedRequest,
@@ -2154,76 +2226,7 @@ declare namespace entities {
         UsersUpdateMemoRequest,
         V2AdminEmojiListRequest,
         V2AdminEmojiListResponse,
-        VerifyEmailRequest,
-        Error_2 as Error,
-        UserLite,
-        UserDetailedNotMeOnly,
-        MeDetailedOnly,
-        UserDetailedNotMe,
-        MeDetailed,
-        UserDetailed,
-        User,
-        UserList,
-        Achievement,
-        AchievementName,
-        Ad,
-        Announcement,
-        App,
-        Note,
-        NoteDraft,
-        NoteReaction,
-        NoteReactionWithNote,
-        NoteFavorite,
-        Notification_2 as Notification,
-        DriveFile,
-        DriveFolder,
-        Following,
-        Muting,
-        RenoteMuting,
-        Blocking,
-        Hashtag,
-        InviteCode,
-        Page,
-        PageBlock,
-        Channel,
-        QueueCount,
-        QueueMetrics,
-        QueueJob,
-        Antenna,
-        Clip,
-        FederationInstance,
-        GalleryPost,
-        EmojiSimple,
-        EmojiDetailed,
-        EmojiDetailedAdmin,
-        Flash,
-        Signin,
-        RoleCondFormulaLogics,
-        RoleCondFormulaValueNot,
-        RoleCondFormulaValueIsLocalOrRemote,
-        RoleCondFormulaValueUserSettingBooleanSchema,
-        RoleCondFormulaValueAssignedRole,
-        RoleCondFormulaValueCreated,
-        RoleCondFormulaFollowersOrFollowingOrNotes,
-        RoleCondFormulaValue,
-        RoleLite,
-        Role,
-        RolePolicies,
-        ReversiGameLite,
-        ReversiGameDetailed,
-        MetaLite,
-        MetaDetailedOnly,
-        MetaDetailed,
-        UserWebhook,
-        SystemWebhook,
-        AbuseReportNotificationRecipient,
-        ChatMessage,
-        ChatMessageLite,
-        ChatMessageLiteFor1on1,
-        ChatMessageLiteForRoom,
-        ChatRoom,
-        ChatRoomInvitation,
-        ChatRoomMembership
+        VerifyEmailRequest
     }
 }
 export { entities }
@@ -2723,7 +2726,7 @@ type ISigninHistoryRequest = operations['i___signin-history']['requestBody']['co
 type ISigninHistoryResponse = operations['i___signin-history']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
-function isPureRenote(note: Note): note is PureRenote;
+function isPureRenote(note: Note_2): note is PureRenote;
 
 // @public (undocumented)
 export interface IStream extends EventEmitter<StreamEvents> {
@@ -3039,6 +3042,13 @@ declare namespace note {
 export { note }
 
 // @public (undocumented)
+type Note_2 = Note & {
+    isEdited: boolean;
+    editCount: number;
+    latestEditedAt: DateString | null;
+};
+
+// @public (undocumented)
 type NoteDraft = components['schemas']['NoteDraft'];
 
 // @public (undocumented)
@@ -3100,6 +3110,12 @@ type NotesDraftsUpdateRequest = operations['notes___drafts___update']['requestBo
 
 // @public (undocumented)
 type NotesDraftsUpdateResponse = operations['notes___drafts___update']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
+type NotesEditHistoryRequest = operations['notes___edit-history']['requestBody']['content']['application/json'];
+
+// @public (undocumented)
+type NotesEditHistoryResponse = operations['notes___edit-history']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
 type NotesFavoritesCreateRequest = operations['notes___favorites___create']['requestBody']['content']['application/json'];
@@ -3328,10 +3344,10 @@ type PromoReadRequest = operations['promo___read']['requestBody']['content']['ap
 // Warning: (ae-forgotten-export) The symbol "NonNullableRecord" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type PureRenote = Omit<Note, 'renote' | 'renoteId' | 'reply' | 'replyId' | 'text' | 'cw' | 'files' | 'fileIds' | 'poll'> & AllNullRecord<Pick<Note, 'text'>> & AllNullOrOptionalRecord<Pick<Note, 'reply' | 'replyId' | 'cw' | 'poll'>> & {
+type PureRenote = Omit<Note_2, 'renote' | 'renoteId' | 'reply' | 'replyId' | 'text' | 'cw' | 'files' | 'fileIds' | 'poll'> & AllNullRecord<Pick<Note_2, 'text'>> & AllNullOrOptionalRecord<Pick<Note_2, 'reply' | 'replyId' | 'cw' | 'poll'>> & {
     files: [];
     fileIds: [];
-} & NonNullableRecord<Pick<Note, 'renoteId'>> & Pick<Note, 'renote'>;
+} & NonNullableRecord<Pick<Note_2, 'renoteId'>> & Pick<Note_2, 'renote'>;
 
 // @public (undocumented)
 type QueueCount = components['schemas']['QueueCount'];
@@ -3464,7 +3480,7 @@ type RoleLite = components['schemas']['RoleLite'];
 type RolePolicies = components['schemas']['RolePolicies'];
 
 // @public (undocumented)
-export const rolePolicies: readonly ["gtlAvailable", "ltlAvailable", "canPublicNote", "mentionLimit", "canInvite", "inviteLimit", "inviteLimitCycle", "inviteExpirationTime", "canManageCustomEmojis", "canManageAvatarDecorations", "canSearchNotes", "canSearchUsers", "canUseTranslator", "canHideAds", "driveCapacityMb", "maxFileSizeMb", "alwaysMarkNsfw", "canUpdateBioMedia", "pinLimit", "antennaLimit", "wordMuteLimit", "webhookLimit", "clipLimit", "noteEachClipsLimit", "userListLimit", "userEachUserListsLimit", "rateLimitFactor", "avatarDecorationLimit", "canImportAntennas", "canImportBlocking", "canImportFollowing", "canImportMuting", "canImportUserLists", "chatAvailability", "uploadableFileTypes", "noteDraftLimit", "scheduledNoteLimit", "watermarkAvailable"];
+export const rolePolicies: readonly ["gtlAvailable", "ltlAvailable", "ignoreServerSilence", "canPublicNote", "canEditNote", "mentionLimit", "canInvite", "inviteLimit", "inviteLimitCycle", "inviteExpirationTime", "canManageCustomEmojis", "canManageAvatarDecorations", "canSearchNotes", "canSearchUsers", "canUseTranslator", "canHideAds", "driveCapacityMb", "maxFileSizeMb", "alwaysMarkNsfw", "canUpdateBioMedia", "pinLimit", "antennaLimit", "wordMuteLimit", "webhookLimit", "clipLimit", "noteEachClipsLimit", "userListLimit", "userEachUserListsLimit", "rateLimitFactor", "avatarDecorationLimit", "canImportAntennas", "canImportBlocking", "canImportFollowing", "canImportMuting", "canImportUserLists", "chatAvailability", "uploadableFileTypes", "noteDraftLimit", "scheduledNoteLimit", "watermarkAvailable"];
 
 // @public (undocumented)
 type RolesListResponse = operations['roles___list']['responses']['200']['content']['application/json'];
@@ -3871,7 +3887,7 @@ type VerifyEmailRequest = operations['verify-email']['requestBody']['content']['
 
 // Warnings were encountered during analysis:
 //
-// src/entities.ts:55:2 - (ae-forgotten-export) The symbol "ModerationLogPayloads" needs to be exported by the entry point index.d.ts
+// src/entities.ts:131:2 - (ae-forgotten-export) The symbol "ModerationLogPayloads" needs to be exported by the entry point index.d.ts
 // src/streaming.ts:57:3 - (ae-forgotten-export) The symbol "ReconnectingWebSocket" needs to be exported by the entry point index.d.ts
 // src/streaming.types.ts:226:4 - (ae-forgotten-export) The symbol "ReversiUpdateKey" needs to be exported by the entry point index.d.ts
 // src/streaming.types.ts:236:4 - (ae-forgotten-export) The symbol "ReversiUpdateSettings" needs to be exported by the entry point index.d.ts
