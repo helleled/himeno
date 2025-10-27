@@ -28,8 +28,9 @@ interface HarfbuzzWasm extends WebAssembly.Exports {
 export async function generateSubsettedFont(ttfPath: string, unicodeRangeValues: Map<string, number[]>) {
 	const ttf = await fsp.readFile(ttfPath);
 
-	const result = await WebAssembly.instantiate(await fsp.readFile('./node_modules/harfbuzzjs/hb-subset.wasm'));
-	const harfbuzzWasm = result.instance.exports as HarfbuzzWasm;
+	const wasmBuffer = await fsp.readFile('./node_modules/harfbuzzjs/hb-subset.wasm');
+	const { instance } = (await WebAssembly.instantiate(wasmBuffer)) as unknown as WebAssembly.WebAssemblyInstantiatedSource;
+	const harfbuzzWasm = instance.exports as HarfbuzzWasm;
 
 	const heapu8 = new Uint8Array(harfbuzzWasm.memory.buffer);
 
