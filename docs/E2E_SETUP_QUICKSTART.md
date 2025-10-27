@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: syuilo and misskey-project -->
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+
 # E2E Testing Quick Start Guide
 
 This guide provides a quick reference for running end-to-end (e2e) tests in Misskey.
