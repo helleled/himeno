@@ -57,6 +57,10 @@ jobs:
     name: E2E tests (frontend)
     runs-on: ubuntu-latest
 
+    env:
+      CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+      NODE_OPTIONS: --max_old_space_size=4096
+
     strategy:
       fail-fast: false
       matrix:
@@ -92,6 +96,46 @@ jobs:
       with:
         node-version-file: '.node-version'
         cache: 'pnpm'
+    - name: Install Cypress system dependencies
+      run: |
+        set -euxo pipefail
+        sudo apt-get update
+        GTK3_PKG=$(if apt-cache show libgtk-3-0 >/dev/null 2>&1; then echo libgtk-3-0; else echo libgtk-3-0t64; fi)
+        ATK_BRIDGE_PKG=$(if apt-cache show libatk-bridge2.0-0 >/dev/null 2>&1; then echo libatk-bridge2.0-0; else echo libatk-bridge2.0-0t64; fi)
+        ATK_PKG=$(if apt-cache show libatk1.0-0 >/dev/null 2>&1; then echo libatk1.0-0; else echo libatk1.0-0t64; fi)
+        ATSPI_PKG=$(if apt-cache show libatspi2.0-0 >/dev/null 2>&1; then echo libatspi2.0-0; else echo libatspi2.0-0t64; fi)
+        ALSA_PKG=$(if apt-cache show libasound2 >/dev/null 2>&1; then echo libasound2; else echo libasound2t64; fi)
+        sudo apt-get install --no-install-recommends -y \
+          "$GTK3_PKG" \
+          "$ATK_BRIDGE_PKG" \
+          "$ATK_PKG" \
+          "$ATSPI_PKG" \
+          "$ALSA_PKG" \
+          libnss3 \
+          libxss1 \
+          libx11-xcb1 \
+          libxrandr2 \
+          libxi6 \
+          libxdamage1 \
+          libxcomposite1 \
+          libxcursor1 \
+          libxinerama1 \
+          libgbm-dev \
+          libdrm2 \
+          libxkbcommon0 \
+          libpangocairo-1.0-0 \
+          libpango-1.0-0 \
+          libglu1-mesa \
+          libxshmfence1 \
+          xvfb
+        sudo rm -rf /var/lib/apt/lists/*
+    - name: Cache Cypress binary
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/Cypress
+        key: ${{ runner.os }}-cypress-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-cypress-
     - run: pnpm i --frozen-lockfile
     - name: Copy Configure
       run: cp .github/misskey/test.yml .config
@@ -106,13 +150,15 @@ jobs:
       run: pnpm exec cypress install
     - name: Cypress run
       uses: cypress-io/github-action@v6
-      timeout-minutes: 15
+      timeout-minutes: 20
       with:
         install: false
         start: pnpm start:test
-        wait-on: 'http://localhost:61812'
-        headed: true
+        wait-on: 'http://127.0.0.1:61812/healthz'
+        wait-on-timeout: 120000
         browser: ${{ matrix.browser }}
+        headed: true
+        xvfb: true
     - uses: actions/upload-artifact@v4
       if: failure()
       with:
