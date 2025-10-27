@@ -5,11 +5,13 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { IsNull, LessThan, Not } from 'typeorm';
+import { not } from 'ajv/dist/compile/codegen/index.js';
 import { DI } from '@/di-symbols.js';
 import type { NotesRepository, UsersRepository } from '@/models/_.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
+import { NoteDeleteService } from '@/core/NoteDeleteService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 
@@ -25,6 +27,7 @@ export class AutoDeleteNotesProcessorService {
 		private notesRepository: NotesRepository,
 
 		private idService: IdService,
+		private noteDeleteService: NoteDeleteService,
 		private queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('auto-delete-notes');
@@ -77,18 +80,20 @@ export class AutoDeleteNotesProcessorService {
 				}
 
 				const notesToDelete = await queryBuilder
-					.select('note.id')
-					.limit(1000) // 한 번에 최대 1000개씩 처리
+					.limit(100) // 한 번에 최대 1000개씩 처리
 					.getMany();
 
 				if (notesToDelete.length > 0) {
-					const noteIds = notesToDelete.map(note => note.id);
-					await this.notesRepository.delete(noteIds);
+					for (const note of notesToDelete) {
+						try {
+							await this.noteDeleteService.delete(user, note);
+							stats.deletedCount++;
+						} catch (error) {
+							this.logger.error(`Failed to delete note $(note.id): ${error}`);
+						}
+					}
 
-					stats.deletedCount += noteIds.length;
-					this.logger.info(`Deleted ${noteIds.length} notes for user ${user.id}`);
-				} else {
-					this.logger.info(`No notes to delete for user ${user.id}`);
+					this.logger.info(`Deleted ${notesToDelete.length} notes for users ${user.id}`);
 				}
 
 				stats.processedUsers++;
