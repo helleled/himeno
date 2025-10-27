@@ -12,9 +12,13 @@ import { createEmptyNotification, createNotification } from '@/scripts/create-no
 import { swLang } from '@/scripts/lang.js';
 import * as swos from '@/scripts/operations.js';
 
-type PartialEditableNote = Omit<Misskey.entities.Note, 'isEdited' | 'editCount' | 'latestEditedAt'> & Partial<Pick<Misskey.entities.Note, 'isEdited' | 'editCount' | 'latestEditedAt'>>;
+type NoteWithOptionalEditMetadata = Omit<Misskey.entities.Note, 'isEdited' | 'editCount' | 'latestEditedAt'> & {
+    isEdited?: boolean;
+    editCount?: number;
+    latestEditedAt?: Misskey.entities.DateString | null;
+};
 
-const withNoteDefaults = (note: PartialEditableNote): Misskey.entities.Note => ({
+const withNoteDefaults = (note: NoteWithOptionalEditMetadata): Misskey.entities.Note => ({
     ...note,
     isEdited: note.isEdited ?? false,
     editCount: note.editCount ?? 0,
