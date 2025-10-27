@@ -97,6 +97,8 @@ jobs:
       run: cp .github/misskey/test.yml .config
     - name: Build
       run: pnpm build
+    - name: Verify migration files exist
+      run: pnpm --filter backend check-migration-files
     - name: Test
       run: pnpm --filter backend test-and-coverage
     - name: Upload to Codecov
@@ -146,6 +148,8 @@ jobs:
         run: cp .github/misskey/test.yml .config
       - name: Build
         run: pnpm build
+      - name: Verify migration files exist
+        run: pnpm --filter backend check-migration-files
       - name: Test
         run: pnpm --filter backend test-and-coverage:e2e
       - name: Upload to Codecov
@@ -193,6 +197,8 @@ jobs:
         run: cp .github/misskey/test.yml .config
       - name: Build
         run: pnpm build
+      - name: Verify migration files exist
+        run: pnpm --filter backend check-migration-files
       - name: Run migrations
         run: MISSKEY_CONFIG_YML=test.yml pnpm --filter backend migrate
       - name: Check no migrations are remaining
