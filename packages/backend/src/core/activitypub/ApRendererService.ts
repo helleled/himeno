@@ -26,6 +26,7 @@ import type { MiUserKeypair } from '@/models/UserKeypair.js';
 import type { UsersRepository, UserProfilesRepository, NotesRepository, DriveFilesRepository, PollsRepository, MiMeta } from '@/models/_.js';
 import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
+import { AvatarDecorationService } from '@/core/AvatarDecorationService.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { JsonLdService } from './JsonLdService.js';
@@ -58,6 +59,7 @@ export class ApRendererService {
         private pollsRepository: PollsRepository,
 
         private customEmojiService: CustomEmojiService,
+        private avatarDecorationService: AvatarDecorationService,
         private userEntityService: UserEntityService,
         private driveFileEntityService: DriveFileEntityService,
         private jsonLdService: JsonLdService,
@@ -595,6 +597,28 @@ export class ApRendererService {
 
         if (profile.location) {
             person['vcard:Address'] = profile.location;
+        }
+
+        if (user.avatarDecorations.length > 0) {
+            const allDecorations = await this.avatarDecorationService.getAll();
+            const decorations = user.avatarDecorations
+                .map(ud => {
+                    const decoration = allDecorations.find(d => d.id === ud.id);
+                    if (!decoration) return null;
+                    return {
+                        id: ud.id,
+                        url: decoration.url,
+                        angle: ud.angle ?? undefined,
+                        flipH: ud.flipH ?? undefined,
+                        offsetX: ud.offsetX ?? undefined,
+                        offsetY: ud.offsetY ?? undefined,
+                    };
+                })
+                .filter((d): d is NonNullable<typeof d> => d != null);
+            
+            if (decorations.length > 0) {
+                person._misskey_avatarDecorations = decorations;
+            }
         }
 
         return person;
