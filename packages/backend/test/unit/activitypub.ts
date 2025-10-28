@@ -40,453 +40,479 @@ type NonTransientIActor = IActor & { id: string };
 type NonTransientIPost = IPost & { id: string };
 
 function createRandomActor({ actorHost = host } = {}): NonTransientIActor {
-	const preferredUsername = secureRndstr(8);
-	const actorId = `${actorHost}/users/${preferredUsername.toLowerCase()}`;
+    const preferredUsername = secureRndstr(8);
+    const actorId = `${actorHost}/users/${preferredUsername.toLowerCase()}`;
 
-	return {
-		'@context': 'https://www.w3.org/ns/activitystreams',
-		id: actorId,
-		type: 'Person',
-		preferredUsername,
-		inbox: `${actorId}/inbox`,
-		outbox: `${actorId}/outbox`,
-	};
+    return {
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        preferredUsername,
+        inbox: `${actorId}/inbox`,
+        outbox: `${actorId}/outbox`,
+    };
 }
 
 function createRandomNote(actor: NonTransientIActor): NonTransientIPost {
-	const id = secureRndstr(8);
-	const noteId = `${new URL(actor.id).origin}/notes/${id}`;
+    const id = secureRndstr(8);
+    const noteId = `${new URL(actor.id).origin}/notes/${id}`;
 
-	return {
-		id: noteId,
-		type: 'Note',
-		attributedTo: actor.id,
-		content: 'test test foo',
-	};
+    return {
+        id: noteId,
+        type: 'Note',
+        attributedTo: actor.id,
+        content: 'test test foo',
+    };
 }
 
 function createRandomNotes(actor: NonTransientIActor, length: number): NonTransientIPost[] {
-	return new Array(length).fill(null).map(() => createRandomNote(actor));
+    return new Array(length).fill(null).map(() => createRandomNote(actor));
 }
 
 function createRandomFeaturedCollection(actor: NonTransientIActor, length: number): ICollection {
-	const items = createRandomNotes(actor, length);
+    const items = createRandomNotes(actor, length);
 
-	return {
-		'@context': 'https://www.w3.org/ns/activitystreams',
-		type: 'Collection',
-		id: actor.outbox as string,
-		totalItems: items.length,
-		items,
-	};
+    return {
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        type: 'Collection',
+        id: actor.outbox as string,
+        totalItems: items.length,
+        items,
+    };
 }
 
 async function createRandomRemoteUser(
-	resolver: MockResolver,
-	personService: ApPersonService,
+    resolver: MockResolver,
+    personService: ApPersonService,
 ): Promise<MiRemoteUser> {
-	const actor = createRandomActor();
-	resolver.register(actor.id, actor);
+    const actor = createRandomActor();
+    resolver.register(actor.id, actor);
 
-	return await personService.createPerson(actor.id, resolver);
+    return await personService.createPerson(actor.id, resolver);
 }
 
 describe('ActivityPub', () => {
-	let userProfilesRepository: UserProfilesRepository;
-	let imageService: ApImageService;
-	let noteService: ApNoteService;
-	let personService: ApPersonService;
-	let rendererService: ApRendererService;
-	let jsonLdService: JsonLdService;
-	let resolver: MockResolver;
+    let userProfilesRepository: UserProfilesRepository;
+    let imageService: ApImageService;
+    let noteService: ApNoteService;
+    let personService: ApPersonService;
+    let rendererService: ApRendererService;
+    let jsonLdService: JsonLdService;
+    let resolver: MockResolver;
 
-	const metaInitial = {
-		cacheRemoteFiles: true,
-		cacheRemoteSensitiveFiles: true,
-		enableFanoutTimeline: true,
-		enableFanoutTimelineDbFallback: true,
-		perUserHomeTimelineCacheMax: 100,
-		perLocalUserUserTimelineCacheMax: 100,
-		perRemoteUserUserTimelineCacheMax: 100,
-		blockedHosts: [] as string[],
-		sensitiveWords: [] as string[],
-		prohibitedWords: [] as string[],
-	} as MiMeta;
-	const meta = { ...metaInitial };
+    const metaInitial = {
+        cacheRemoteFiles: true,
+        cacheRemoteSensitiveFiles: true,
+        enableFanoutTimeline: true,
+        enableFanoutTimelineDbFallback: true,
+        perUserHomeTimelineCacheMax: 100,
+        perLocalUserUserTimelineCacheMax: 100,
+        perRemoteUserUserTimelineCacheMax: 100,
+        blockedHosts: [] as string[],
+        sensitiveWords: [] as string[],
+        prohibitedWords: [] as string[],
+    } as MiMeta;
+    const meta = { ...metaInitial };
 
-	function updateMeta(newMeta: Partial<MiMeta>): void {
-		for (const key in meta) {
-			delete (meta as any)[key];
-		}
-		Object.assign(meta, newMeta);
-	}
+    function updateMeta(newMeta: Partial<MiMeta>): void {
+        for (const key in meta) {
+            delete (meta as any)[key];
+        }
+        Object.assign(meta, newMeta);
+    }
 
-	beforeAll(async () => {
-		const app = await Test.createTestingModule({
-			imports: [GlobalModule, CoreModule],
-		})
-			.overrideProvider(DownloadService).useValue({
-				async downloadUrl(url: string, path: string): Promise<{ filename: string }> {
-					if (url.endsWith('.png')) {
-						fs.copyFileSync(
-							_dirname + '/../resources/hw.png',
-							path,
-						);
-					}
-					return {
-						filename: 'dummy.tmp',
-					};
-				},
-			})
-			.overrideProvider(DI.meta).useFactory({ factory: () => meta })
-			.compile();
+    beforeAll(async () => {
+        const app = await Test.createTestingModule({
+            imports: [GlobalModule, CoreModule],
+        })
+            .overrideProvider(DownloadService).useValue({
+                async downloadUrl(url: string, path: string): Promise<{ filename: string }> {
+                    if (url.endsWith('.png')) {
+                        fs.copyFileSync(
+                            _dirname + '/../resources/hw.png',
+                            path,
+                        );
+                    }
+                    return {
+                        filename: 'dummy.tmp',
+                    };
+                },
+            })
+            .overrideProvider(DI.meta).useFactory({ factory: () => meta })
+            .compile();
 
-		await app.init();
-		app.enableShutdownHooks();
+        await app.init();
+        app.enableShutdownHooks();
 
-		userProfilesRepository = app.get(DI.userProfilesRepository);
+        userProfilesRepository = app.get(DI.userProfilesRepository);
 
-		noteService = app.get<ApNoteService>(ApNoteService);
-		personService = app.get<ApPersonService>(ApPersonService);
-		rendererService = app.get<ApRendererService>(ApRendererService);
-		imageService = app.get<ApImageService>(ApImageService);
-		jsonLdService = app.get<JsonLdService>(JsonLdService);
-		resolver = new MockResolver(await app.resolve<LoggerService>(LoggerService));
+        noteService = app.get<ApNoteService>(ApNoteService);
+        personService = app.get<ApPersonService>(ApPersonService);
+        rendererService = app.get<ApRendererService>(ApRendererService);
+        imageService = app.get<ApImageService>(ApImageService);
+        jsonLdService = app.get<JsonLdService>(JsonLdService);
+        resolver = new MockResolver(await app.resolve<LoggerService>(LoggerService));
 
-		// Prevent ApPersonService from fetching instance, as it causes Jest import-after-test error
-		const federatedInstanceService = app.get<FederatedInstanceService>(FederatedInstanceService);
-		jest.spyOn(federatedInstanceService, 'fetch').mockImplementation(() => new Promise(() => { }));
-	});
+        // Prevent ApPersonService from fetching instance, as it causes Jest import-after-test error
+        const federatedInstanceService = app.get<FederatedInstanceService>(FederatedInstanceService);
+        jest.spyOn(federatedInstanceService, 'fetch').mockImplementation(() => new Promise(() => { }));
+    });
 
-	beforeEach(() => {
-		resolver.clear();
-	});
+    beforeEach(() => {
+        resolver.clear();
+    });
 
-	describe('Parse minimum object', () => {
-		const actor = createRandomActor();
+    describe('Parse minimum object', () => {
+        const actor = createRandomActor();
 
-		const post = {
-			'@context': 'https://www.w3.org/ns/activitystreams',
-			id: `${host}/users/${secureRndstr(8)}`,
-			type: 'Note',
-			attributedTo: actor.id,
-			to: 'https://www.w3.org/ns/activitystreams#Public',
-			content: 'あ',
-		};
+        const post = {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            id: `${host}/users/${secureRndstr(8)}`,
+            type: 'Note',
+            attributedTo: actor.id,
+            to: 'https://www.w3.org/ns/activitystreams#Public',
+            content: 'あ',
+        };
 
-		test('Minimum Actor', async () => {
-			resolver.register(actor.id, actor);
+        test('Minimum Actor', async () => {
+            resolver.register(actor.id, actor);
 
-			const user = await personService.createPerson(actor.id, resolver);
+            const user = await personService.createPerson(actor.id, resolver);
 
-			assert.deepStrictEqual(user.uri, actor.id);
-			assert.deepStrictEqual(user.username, actor.preferredUsername);
-			assert.deepStrictEqual(user.inbox, actor.inbox);
-		});
+            assert.deepStrictEqual(user.uri, actor.id);
+            assert.deepStrictEqual(user.username, actor.preferredUsername);
+            assert.deepStrictEqual(user.inbox, actor.inbox);
+        });
 
-		test('Minimum Note', async () => {
-			resolver.register(actor.id, actor);
-			resolver.register(post.id, post);
+        test('Minimum Note', async () => {
+            resolver.register(actor.id, actor);
+            resolver.register(post.id, post);
 
-			const note = await noteService.createNote(post.id, undefined, resolver, true);
+            const note = await noteService.createNote(post.id, undefined, resolver, true);
 
-			assert.deepStrictEqual(note?.uri, post.id);
-			assert.deepStrictEqual(note.visibility, 'public');
-			assert.deepStrictEqual(note.text, post.content);
-		});
-	});
+            assert.deepStrictEqual(note?.uri, post.id);
+            assert.deepStrictEqual(note.visibility, 'public');
+            assert.deepStrictEqual(note.text, post.content);
+        });
+    });
 
-	describe('Name field', () => {
-		test('Truncate long name', async () => {
-			const actor = {
-				...createRandomActor(),
-				name: secureRndstr(129),
-			};
+    describe('Name field', () => {
+        test('Truncate long name', async () => {
+            const actor = {
+                ...createRandomActor(),
+                name: secureRndstr(129),
+            };
 
-			resolver.register(actor.id, actor);
+            resolver.register(actor.id, actor);
 
-			const user = await personService.createPerson(actor.id, resolver);
+            const user = await personService.createPerson(actor.id, resolver);
 
-			assert.deepStrictEqual(user.name, actor.name.slice(0, 128));
-		});
+            assert.deepStrictEqual(user.name, actor.name.slice(0, 128));
+        });
 
-		test('Normalize empty name', async () => {
-			const actor = {
-				...createRandomActor(),
-				name: '',
-			};
+        test('Normalize empty name', async () => {
+            const actor = {
+                ...createRandomActor(),
+                name: '',
+            };
 
-			resolver.register(actor.id, actor);
+            resolver.register(actor.id, actor);
 
-			const user = await personService.createPerson(actor.id, resolver);
+            const user = await personService.createPerson(actor.id, resolver);
 
-			assert.strictEqual(user.name, null);
-		});
-	});
+            assert.strictEqual(user.name, null);
+        });
+    });
 
-	describe('Collection visibility', () => {
-		test('Public following/followers', async () => {
-			const actor = createRandomActor();
-			actor.following = {
-				id: `${actor.id}/following`,
-				type: 'OrderedCollection',
-				totalItems: 0,
-				first: `${actor.id}/following?page=1`,
-			};
-			actor.followers = `${actor.id}/followers`;
+    describe('Collection visibility', () => {
+        test('Public following/followers', async () => {
+            const actor = createRandomActor();
+            actor.following = {
+                id: `${actor.id}/following`,
+                type: 'OrderedCollection',
+                totalItems: 0,
+                first: `${actor.id}/following?page=1`,
+            };
+            actor.followers = `${actor.id}/followers`;
 
-			resolver.register(actor.id, actor);
-			resolver.register(actor.followers, {
-				id: actor.followers,
-				type: 'OrderedCollection',
-				totalItems: 0,
-				first: `${actor.followers}?page=1`,
-			});
+            resolver.register(actor.id, actor);
+            resolver.register(actor.followers, {
+                id: actor.followers,
+                type: 'OrderedCollection',
+                totalItems: 0,
+                first: `${actor.followers}?page=1`,
+            });
 
-			const user = await personService.createPerson(actor.id, resolver);
-			const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
+            const user = await personService.createPerson(actor.id, resolver);
+            const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
 
-			assert.deepStrictEqual(userProfile.followingVisibility, 'public');
-			assert.deepStrictEqual(userProfile.followersVisibility, 'public');
-		});
+            assert.deepStrictEqual(userProfile.followingVisibility, 'public');
+            assert.deepStrictEqual(userProfile.followersVisibility, 'public');
+        });
 
-		test('Private following/followers', async () => {
-			const actor = createRandomActor();
-			actor.following = {
-				id: `${actor.id}/following`,
-				type: 'OrderedCollection',
-				totalItems: 0,
-				// first: …
-			};
-			actor.followers = `${actor.id}/followers`;
+        test('Private following/followers', async () => {
+            const actor = createRandomActor();
+            actor.following = {
+                id: `${actor.id}/following`,
+                type: 'OrderedCollection',
+                totalItems: 0,
+                // first: …
+            };
+            actor.followers = `${actor.id}/followers`;
 
-			resolver.register(actor.id, actor);
-			//resolver.register(actor.followers, { … });
+            resolver.register(actor.id, actor);
+            //resolver.register(actor.followers, { … });
 
-			const user = await personService.createPerson(actor.id, resolver);
-			const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
+            const user = await personService.createPerson(actor.id, resolver);
+            const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
 
-			assert.deepStrictEqual(userProfile.followingVisibility, 'private');
-			assert.deepStrictEqual(userProfile.followersVisibility, 'private');
-		});
-	});
+            assert.deepStrictEqual(userProfile.followingVisibility, 'private');
+            assert.deepStrictEqual(userProfile.followersVisibility, 'private');
+        });
+    });
 
-	describe('Renderer', () => {
-		test('Render an announce with visibility: followers', () => {
-			rendererService.renderAnnounce('https://example.com/notes/00example', {
-				id: genAidx(Date.now()),
-				visibility: 'followers',
-			} as MiNote);
-		});
-	});
+    describe('Renderer', () => {
+        test('Render an announce with visibility: followers', () => {
+            rendererService.renderAnnounce('https://example.com/notes/00example', {
+                id: genAidx(Date.now()),
+                visibility: 'followers',
+            } as MiNote);
+        });
 
-	describe('Featured', () => {
-		test('Fetch featured notes from IActor', async () => {
-			const actor = createRandomActor();
-			actor.featured = `${actor.id}/collections/featured`;
+        test('Render person without avatar decorations', async () => {
+            const user = await personService.createPerson(createRandomActor().id, resolver);
+            const rendered = await rendererService.renderPerson(user);
+            assert.strictEqual(rendered._misskey_avatarDecorations, undefined);
+        });
 
-			const featured = createRandomFeaturedCollection(actor, 5);
+        test('Render person with avatar decorations', async () => {
+            const actor = createRandomActor();
+            resolver.register(actor.id, actor);
+            const user = await personService.createPerson(actor.id, resolver);
 
-			resolver.register(actor.id, actor);
-			resolver.register(actor.featured, featured);
+            user.avatarDecorations = [
+                {
+                    id: 'decoration1',
+                    angle: 45,
+                    flipH: true,
+                    offsetX: 10,
+                    offsetY: 20,
+                },
+            ];
 
-			await personService.createPerson(actor.id, resolver);
+            const rendered = await rendererService.renderPerson(user);
+            assert.ok(rendered._misskey_avatarDecorations);
+            assert.strictEqual(rendered._misskey_avatarDecorations.length, 0);
+        });
+    });
 
-			// All notes in `featured` are same-origin, no need to fetch notes again
-			assert.deepStrictEqual(resolver.remoteGetTrials(), [actor.id, actor.featured]);
+    describe('Featured', () => {
+        test('Fetch featured notes from IActor', async () => {
+            const actor = createRandomActor();
+            actor.featured = `${actor.id}/collections/featured`;
 
-			// Created notes without resolving anything
-			for (const item of featured.items as IPost[]) {
-				const note = await noteService.fetchNote(item);
-				assert.ok(note);
-				assert.strictEqual(note.text, 'test test foo');
-				assert.strictEqual(note.uri, item.id);
-			}
-		});
+            const featured = createRandomFeaturedCollection(actor, 5);
 
-		test('Fetch featured notes from IActor pointing to another remote server', async () => {
-			const actor1 = createRandomActor();
-			actor1.featured = `${actor1.id}/collections/featured`;
-			const actor2 = createRandomActor({ actorHost: 'https://host2.test' });
+            resolver.register(actor.id, actor);
+            resolver.register(actor.featured, featured);
 
-			const actor2Note = createRandomNote(actor2);
-			const featured = createRandomFeaturedCollection(actor1, 0);
-			(featured.items as IPost[]).push({
-				...actor2Note,
-				content: 'test test bar', // fraud!
-			});
+            await personService.createPerson(actor.id, resolver);
 
-			resolver.register(actor1.id, actor1);
-			resolver.register(actor1.featured, featured);
-			resolver.register(actor2.id, actor2);
-			resolver.register(actor2Note.id, actor2Note);
+            // All notes in `featured` are same-origin, no need to fetch notes again
+            assert.deepStrictEqual(resolver.remoteGetTrials(), [actor.id, actor.featured]);
 
-			await personService.createPerson(actor1.id, resolver);
+            // Created notes without resolving anything
+            for (const item of featured.items as IPost[]) {
+                const note = await noteService.fetchNote(item);
+                assert.ok(note);
+                assert.strictEqual(note.text, 'test test foo');
+                assert.strictEqual(note.uri, item.id);
+            }
+        });
 
-			// actor2Note is from a different server and needs to be fetched again
-			assert.deepStrictEqual(
-				resolver.remoteGetTrials(),
-				[actor1.id, actor1.featured, actor2Note.id, actor2.id],
-			);
+        test('Fetch featured notes from IActor pointing to another remote server', async () => {
+            const actor1 = createRandomActor();
+            actor1.featured = `${actor1.id}/collections/featured`;
+            const actor2 = createRandomActor({ actorHost: 'https://host2.test' });
 
-			const note = await noteService.fetchNote(actor2Note.id);
-			assert.ok(note);
+            const actor2Note = createRandomNote(actor2);
+            const featured = createRandomFeaturedCollection(actor1, 0);
+            (featured.items as IPost[]).push({
+                ...actor2Note,
+                content: 'test test bar', // fraud!
+            });
 
-			// Reflects the original content instead of the fraud
-			assert.strictEqual(note.text, 'test test foo');
-			assert.strictEqual(note.uri, actor2Note.id);
-		});
+            resolver.register(actor1.id, actor1);
+            resolver.register(actor1.featured, featured);
+            resolver.register(actor2.id, actor2);
+            resolver.register(actor2Note.id, actor2Note);
 
-		test('Fetch a note that is a featured note of the attributed actor', async () => {
-			const actor = createRandomActor();
-			actor.featured = `${actor.id}/collections/featured`;
+            await personService.createPerson(actor1.id, resolver);
 
-			const featured = createRandomFeaturedCollection(actor, 5);
-			const firstNote = (featured.items as NonTransientIPost[])[0];
+            // actor2Note is from a different server and needs to be fetched again
+            assert.deepStrictEqual(
+                resolver.remoteGetTrials(),
+                [actor1.id, actor1.featured, actor2Note.id, actor2.id],
+            );
 
-			resolver.register(actor.id, actor);
-			resolver.register(actor.featured, featured);
-			resolver.register(firstNote.id, firstNote);
+            const note = await noteService.fetchNote(actor2Note.id);
+            assert.ok(note);
 
-			const note = await noteService.createNote(firstNote.id as string, undefined, resolver);
-			assert.strictEqual(note?.uri, firstNote.id);
-		});
-	});
+            // Reflects the original content instead of the fraud
+            assert.strictEqual(note.text, 'test test foo');
+            assert.strictEqual(note.uri, actor2Note.id);
+        });
 
-	describe('Images', () => {
-		test('Create images', async () => {
-			const imageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/foo.png',
-				name: '',
-			};
-			const driveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				imageObject,
-			);
-			assert.ok(driveFile && !driveFile.isLink);
+        test('Fetch a note that is a featured note of the attributed actor', async () => {
+            const actor = createRandomActor();
+            actor.featured = `${actor.id}/collections/featured`;
 
-			const sensitiveImageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/bar.png',
-				name: '',
-				sensitive: true,
-			};
-			const sensitiveDriveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				sensitiveImageObject,
-			);
-			assert.ok(sensitiveDriveFile && !sensitiveDriveFile.isLink);
-		});
+            const featured = createRandomFeaturedCollection(actor, 5);
+            const firstNote = (featured.items as NonTransientIPost[])[0];
 
-		test('cacheRemoteFiles=false disables caching', async () => {
-			updateMeta({ ...metaInitial, cacheRemoteFiles: false });
+            resolver.register(actor.id, actor);
+            resolver.register(actor.featured, featured);
+            resolver.register(firstNote.id, firstNote);
 
-			const imageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/foo.png',
-				name: '',
-			};
-			const driveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				imageObject,
-			);
-			assert.ok(driveFile && driveFile.isLink);
+            const note = await noteService.createNote(firstNote.id as string, undefined, resolver);
+            assert.strictEqual(note?.uri, firstNote.id);
+        });
+    });
 
-			const sensitiveImageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/bar.png',
-				name: '',
-				sensitive: true,
-			};
-			const sensitiveDriveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				sensitiveImageObject,
-			);
-			assert.ok(sensitiveDriveFile && sensitiveDriveFile.isLink);
-		});
+    describe('Images', () => {
+        test('Create images', async () => {
+            const imageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/foo.png',
+                name: '',
+            };
+            const driveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                imageObject,
+            );
+            assert.ok(driveFile && !driveFile.isLink);
 
-		test('cacheRemoteSensitiveFiles=false only affects sensitive files', async () => {
-			updateMeta({ ...metaInitial, cacheRemoteSensitiveFiles: false });
+            const sensitiveImageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/bar.png',
+                name: '',
+                sensitive: true,
+            };
+            const sensitiveDriveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                sensitiveImageObject,
+            );
+            assert.ok(sensitiveDriveFile && !sensitiveDriveFile.isLink);
+        });
 
-			const imageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/foo.png',
-				name: '',
-			};
-			const driveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				imageObject,
-			);
-			assert.ok(driveFile && !driveFile.isLink);
+        test('cacheRemoteFiles=false disables caching', async () => {
+            updateMeta({ ...metaInitial, cacheRemoteFiles: false });
 
-			const sensitiveImageObject: IApDocument = {
-				type: 'Document',
-				mediaType: 'image/png',
-				url: 'http://host1.test/bar.png',
-				name: '',
-				sensitive: true,
-			};
-			const sensitiveDriveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				sensitiveImageObject,
-			);
-			assert.ok(sensitiveDriveFile && sensitiveDriveFile.isLink);
-		});
+            const imageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/foo.png',
+                name: '',
+            };
+            const driveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                imageObject,
+            );
+            assert.ok(driveFile && driveFile.isLink);
 
-		test('Link is not an attachment files', async () => {
-			const linkObject: IObject = {
-				type: 'Link',
-				href: 'https://example.com/',
-			};
-			const driveFile = await imageService.createImage(
-				await createRandomRemoteUser(resolver, personService),
-				linkObject,
-			);
-			assert.strictEqual(driveFile, null);
-		});
-	});
+            const sensitiveImageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/bar.png',
+                name: '',
+                sensitive: true,
+            };
+            const sensitiveDriveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                sensitiveImageObject,
+            );
+            assert.ok(sensitiveDriveFile && sensitiveDriveFile.isLink);
+        });
 
-	describe('JSON-LD', () => {
-		test('Compaction', async () => {
-			const jsonLd = jsonLdService.use();
+        test('cacheRemoteSensitiveFiles=false only affects sensitive files', async () => {
+            updateMeta({ ...metaInitial, cacheRemoteSensitiveFiles: false });
 
-			const object = {
-				'@context': [
-					'https://www.w3.org/ns/activitystreams',
-					{
-						_misskey_quote: 'https://misskey-hub.net/ns#_misskey_quote',
-						unknown: 'https://example.org/ns#unknown',
-						undefined: null,
-					},
-				],
-				id: 'https://example.com/notes/42',
-				type: 'Note',
-				attributedTo: 'https://example.com/users/1',
-				to: ['https://www.w3.org/ns/activitystreams#Public'],
-				content: 'test test foo',
-				_misskey_quote: 'https://example.com/notes/1',
-				unknown: 'test test bar',
-				undefined: 'test test baz',
-			};
-			const compacted = await jsonLd.compact(object);
+            const imageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/foo.png',
+                name: '',
+            };
+            const driveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                imageObject,
+            );
+            assert.ok(driveFile && !driveFile.isLink);
 
-			assert.deepStrictEqual(compacted, {
-				'@context': CONTEXT,
-				id: 'https://example.com/notes/42',
-				type: 'Note',
-				attributedTo: 'https://example.com/users/1',
-				to: 'as:Public',
-				content: 'test test foo',
-				_misskey_quote: 'https://example.com/notes/1',
-				'https://example.org/ns#unknown': 'test test bar',
-				// undefined: 'test test baz',
-			});
-		});
-	});
+            const sensitiveImageObject: IApDocument = {
+                type: 'Document',
+                mediaType: 'image/png',
+                url: 'http://host1.test/bar.png',
+                name: '',
+                sensitive: true,
+            };
+            const sensitiveDriveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                sensitiveImageObject,
+            );
+            assert.ok(sensitiveDriveFile && sensitiveDriveFile.isLink);
+        });
+
+        test('Link is not an attachment files', async () => {
+            const linkObject: IObject = {
+                type: 'Link',
+                href: 'https://example.com/',
+            };
+            const driveFile = await imageService.createImage(
+                await createRandomRemoteUser(resolver, personService),
+                linkObject,
+            );
+            assert.strictEqual(driveFile, null);
+        });
+    });
+
+    describe('JSON-LD', () => {
+        test('Compaction', async () => {
+            const jsonLd = jsonLdService.use();
+
+            const object = {
+                '@context': [
+                    'https://www.w3.org/ns/activitystreams',
+                    {
+                        _misskey_quote: 'https://misskey-hub.net/ns#_misskey_quote',
+                        unknown: 'https://example.org/ns#unknown',
+                        undefined: null,
+                    },
+                ],
+                id: 'https://example.com/notes/42',
+                type: 'Note',
+                attributedTo: 'https://example.com/users/1',
+                to: ['https://www.w3.org/ns/activitystreams#Public'],
+                content: 'test test foo',
+                _misskey_quote: 'https://example.com/notes/1',
+                unknown: 'test test bar',
+                undefined: 'test test baz',
+            };
+            const compacted = await jsonLd.compact(object);
+
+            assert.deepStrictEqual(compacted, {
+                '@context': CONTEXT,
+                id: 'https://example.com/notes/42',
+                type: 'Note',
+                attributedTo: 'https://example.com/users/1',
+                to: 'as:Public',
+                content: 'test test foo',
+                _misskey_quote: 'https://example.com/notes/1',
+                'https://example.org/ns#unknown': 'test test bar',
+                // undefined: 'test test baz',
+            });
+        });
+    });
 });
