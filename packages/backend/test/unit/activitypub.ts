@@ -304,6 +304,94 @@ describe('ActivityPub', () => {
             assert.ok(rendered._misskey_avatarDecorations);
             assert.strictEqual(rendered._misskey_avatarDecorations.length, 0);
         });
+
+        test('Accept remote avatar decorations on create', async () => {
+            const actor = createRandomActor();
+            const decorationUrl = `${actor.id}/decorations/deco1.png`;
+            actor._misskey_avatarDecorations = [
+                {
+                    id: 'remote-deco-1',
+                    url: decorationUrl,
+                    angle: 30,
+                    flipH: false,
+                    offsetX: 0.1,
+                    offsetY: -0.2,
+                },
+            ];
+            resolver.register(actor.id, actor);
+
+            const user = await personService.createPerson(actor.id, resolver);
+            assert.strictEqual(user.avatarDecorations.length, 1);
+            assert.strictEqual(user.avatarDecorations[0].id, 'remote-deco-1');
+            assert.strictEqual(user.avatarDecorations[0].url, decorationUrl);
+            assert.strictEqual(user.avatarDecorations[0].angle, 30);
+            assert.strictEqual(user.avatarDecorations[0].flipH, false);
+            assert.strictEqual(user.avatarDecorations[0].offsetX, 0.1);
+            assert.strictEqual(user.avatarDecorations[0].offsetY, -0.2);
+        });
+
+        test('Accept remote avatar decorations on update', async () => {
+            const actor = createRandomActor();
+            resolver.register(actor.id, actor);
+            const user = await personService.createPerson(actor.id, resolver);
+            assert.strictEqual(user.avatarDecorations.length, 0);
+
+            const decorationUrl = `${actor.id}/decorations/deco2.png`;
+            actor._misskey_avatarDecorations = [
+                {
+                    id: 'remote-deco-2',
+                    url: decorationUrl,
+                    angle: 45,
+                },
+            ];
+            resolver.register(actor.id, actor);
+
+            await personService.updatePerson(actor.id, resolver);
+            const updatedUser = await personService.fetchPerson(actor.id);
+            assert.ok(updatedUser);
+            assert.strictEqual(updatedUser.avatarDecorations.length, 1);
+            assert.strictEqual(updatedUser.avatarDecorations[0].id, 'remote-deco-2');
+            assert.strictEqual(updatedUser.avatarDecorations[0].url, decorationUrl);
+            assert.strictEqual(updatedUser.avatarDecorations[0].angle, 45);
+        });
+
+        test('Sanitize remote avatar decorations', async () => {
+            const actor = createRandomActor();
+            actor._misskey_avatarDecorations = [
+                {
+                    id: 'valid',
+                    url: `${actor.id}/decorations/valid.png`,
+                },
+                {
+                    id: 'invalid-http',
+                    url: 'http://example.com/invalid.png',
+                },
+                {
+                    id: 'invalid-host',
+                    url: 'https://different-host.test/invalid.png',
+                },
+                {
+                    id: 'no-url',
+                } as any,
+            ];
+            resolver.register(actor.id, actor);
+
+            const user = await personService.createPerson(actor.id, resolver);
+            assert.strictEqual(user.avatarDecorations.length, 1);
+            assert.strictEqual(user.avatarDecorations[0].id, 'valid');
+        });
+
+        test('Limit remote avatar decorations count', async () => {
+            const actor = createRandomActor();
+            actor._misskey_avatarDecorations = Array.from({ length: 20 }, (_, i) => ({
+                id: `deco-${i}`,
+                url: `${actor.id}/decorations/deco${i}.png`,
+            }));
+            resolver.register(actor.id, actor);
+
+            const user = await personService.createPerson(actor.id, resolver);
+            assert.strictEqual(user.avatarDecorations.length, 16);
+        });
     });
 
     describe('Featured', () => {
